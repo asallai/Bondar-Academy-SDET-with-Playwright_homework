@@ -32,30 +32,30 @@ test.describe('Checkboxes', async () => {
 
 	test('Select all specialties', async ({ page }) => {
 		const selectedSpecialtyDropdown = page.locator('.selected-specialties')
-		const allCheckbox = page.locator('.dropdown-content label')
+		const specialtiesDropdown = page.locator('.dropdown-content label')
 
 		await page.getByRole('button', { name: 'Edit vet' }).nth(3).click()
 		await expect(selectedSpecialtyDropdown).toHaveText('surgery')
 
 		await selectedSpecialtyDropdown.click()	
-		for (const checkbox of await allCheckbox.all()) {
-			await checkbox.check()
-			expect(await checkbox.isChecked()).toBeTruthy()
+		for (const specialtyItem of await specialtiesDropdown.all()) {
+			await specialtyItem.check()
+			expect(await specialtyItem.isChecked()).toBeTruthy()
 		}
-		await expect(allCheckbox).toHaveText(['radiology', 'surgery', 'dentistry'])
+		await expect(specialtiesDropdown).toHaveText(['radiology', 'surgery', 'dentistry'])
 	})
 
 	test('Unselect all specialties', async ({ page }) => {
 		const selectedSpecialtyDropdown = page.locator('.selected-specialties')
-		const allCheckbox = page.locator('.dropdown-content label')
+		const specialtiesDropdown = page.locator('.dropdown-content label')
 
 		await page.getByRole('button', { name: 'Edit vet' }).nth(2).click()
 		await expect(selectedSpecialtyDropdown).toHaveText('dentistry, surgery')
 
 		await selectedSpecialtyDropdown.click()		
-		for (const checkbox of await allCheckbox.all()) {
-			await checkbox.uncheck()
-			expect(await checkbox.isChecked()).toBeFalsy()
+		for (const specialtyItem of await specialtiesDropdown.all()) {
+			await specialtyItem.uncheck()
+			expect(await specialtyItem.isChecked()).toBeFalsy()
 		}
 		await expect(selectedSpecialtyDropdown).toBeEmpty()
 	})
