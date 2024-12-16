@@ -10,61 +10,50 @@ test.describe('Lists and Dropdowns', async () => {
 
 	test('Validate selected pet types from the list', async ({ page }) => {
 		const ownerFullName = 'George Franklin'
+		const petTypeField = page.locator('#type1')
 
-		await page.getByText(ownerFullName).click()
+		await page.getByRole('link', { name: ownerFullName }).click()
 		await expect(page.locator('.ownerFullName')).toHaveText(ownerFullName)
 
-		await page.getByText('Edit pet').click()
+		await page.getByText('Leo').locator('..').getByRole('button', { name: 'Edit Pet' }).click()
 		await expect(page.getByRole('heading')).toHaveText('Pet')
 		await expect(page.locator('#owner_name')).toHaveValue(ownerFullName)
-		await expect(page.locator('#type1')).toHaveValue('cat')
+		await expect(petTypeField).toHaveValue('cat')
 
-		const petTypeDropdown = page.locator('select')
-		const petTypeItems = petTypeDropdown.locator('option')
+		const petTypeDropdown = page.getByLabel('Type')
+		const petTypeItemValues = await petTypeDropdown.locator('option').allTextContents()
 
-		for (const petTypeItem of await petTypeItems.all()) {
-			const petTypeItemValue = await petTypeItem.getAttribute('value')
-			await petTypeDropdown.selectOption({ value: petTypeItemValue! })
-
-			const petTypeValue = await page.locator('#type1').inputValue()
-			expect(petTypeItemValue).toEqual(petTypeValue)
+		for (const petTypeItemValue of petTypeItemValues) {
+			await petTypeDropdown.selectOption(petTypeItemValue)
+			await expect(petTypeField).toHaveValue(petTypeItemValue)
 		}
 	})
 
 	test('Validate the pet type update', async ({ page }) => {
 		const petTypes = [
-			{ originalPetType: 'dog', updatedPetType: 'bird' },
-			{ originalPetType: 'bird', updatedPetType: 'dog' },
+			{ petType1: 'dog', petType2: 'bird' },
+			{ petType1: 'bird', petType2: 'dog' },
 		]
 
 		const petTypeField = page.locator('#type1')
-		const petTypeDropdown = page.locator('select')
-		const updatePetTypeButton = page.getByRole('button', { name: 'Update Pet' })
-		const headingLabel2 = page.getByRole('heading').nth(1)
-		const petTypeNameField2 = page.locator('app-pet-list dl').nth(1)
-		const editPetTypeButton2 = page.getByRole('button', { name: 'Edit Pet' }).nth(1)
+		const petTypeDropdown = page.getByLabel('Type')
+		const petRosySection = page.getByText('Rosy').locator('..')
 
-		await page.getByText('Eduardo Rodriquez').click()
+		await page.getByRole('link', { name: 'Eduardo Rodriquez' }).click()
 
-		for (const { originalPetType, updatedPetType } of petTypes) {
-			//4. In the "Pets and Visits" section, click on "Edit Pet" button for the pet with a name "Rosy"
-			await expect(headingLabel2).toHaveText('Pets and Visits')
-			await editPetTypeButton2.click()
-			// 5. Add the assertion that name "Rosy" is displayed in the input field "Name"
-			await expect(page.locator('#name')).toHaveValue('Rosy')
-			// 6. Add the assertion the value "dog" is displayed in the "Type" field
-			await expect(petTypeField).toHaveValue(originalPetType)
-			// 7. From the drop-down menu, select the value "bird"
-			await petTypeDropdown.selectOption(updatedPetType)
-			// 8. On the "Pet details" page, add the assertion the value "bird" is displayed in the "Type" field as well as drop-down input field
+		for (const { petType1, petType2 } of petTypes) {
+			await petRosySection.getByRole('button', { name: 'Edit Pet' }).click()
+			await expect(page.getByLabel('Name')).toHaveValue('Rosy')
+			await expect(petTypeField).toHaveValue(petType1)
+
+			await petTypeDropdown.selectOption(petType2)
 			await expect(page.getByRole('heading')).toHaveText('Pet')
-			await expect(petTypeField).toHaveValue(updatedPetType)
-			expect(await petTypeDropdown.inputValue()).toEqual(updatedPetType)
-			// 9. Select "Update Pet" button
-			await updatePetTypeButton.click()
-			// 10. On the "Pets and Visits" page, add the assertion that pet "Rosy" has a new value of the Type "bird"
-			await expect(headingLabel2).toHaveText('Pets and Visits')
-			await expect(petTypeNameField2).toContainText(updatedPetType)
+			await expect(petTypeField).toHaveValue(petType2)
+			await expect(petTypeDropdown).toHaveValue(petType2)
+
+			await page.getByRole('button', { name: 'Update Pet' }).click()
+			await expect(page.getByRole('heading').nth(1)).toHaveText('Pets and Visits')
+			await expect(petRosySection.locator('dd').nth(2)).toHaveText(petType2)
 		}
 	})
 })
