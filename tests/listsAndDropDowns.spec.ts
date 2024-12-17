@@ -15,7 +15,7 @@ test.describe('Lists and Dropdowns', async () => {
 		await page.getByRole('link', { name: ownerFullName }).click()
 		await expect(page.locator('.ownerFullName')).toHaveText(ownerFullName)
 
-		await page.getByText('Leo').locator('..').getByRole('button', { name: 'Edit Pet' }).click()
+		await page.locator('app-pet-list', { hasText: 'Leo '}).getByRole('button', { name: 'Edit Pet' }).click()
 		await expect(page.getByRole('heading')).toHaveText('Pet')
 		await expect(page.locator('#owner_name')).toHaveValue(ownerFullName)
 		await expect(petTypeField).toHaveValue('cat')
@@ -37,7 +37,7 @@ test.describe('Lists and Dropdowns', async () => {
 
 		const petTypeField = page.locator('#type1')
 		const petTypeDropdown = page.getByLabel('Type')
-		const petRosySection = page.getByText('Rosy').locator('..')
+		const petRosySection = page.locator('app-pet-list', { hasText: 'Rosy' })
 
 		await page.getByRole('link', { name: 'Eduardo Rodriquez' }).click()
 
