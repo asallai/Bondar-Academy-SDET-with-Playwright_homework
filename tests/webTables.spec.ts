@@ -125,7 +125,7 @@ test('Validate specialty lists', async ({ page }) => {
 	expect(specialtyTexts).toEqual(specialtyDropdownItems)
 
 	await page.getByRole('checkbox', { name: 'oncology ' }).check()
-	await page.locator('.dropdown').last().click()
+	await page.locator('.dropdown-arrow').click()
 	await page.getByRole('button', { name: 'Save Vet ' }).click()
 	await expect(testVetRow.locator('td').nth(1)).toHaveText('oncology')
 
@@ -134,5 +134,5 @@ test('Validate specialty lists', async ({ page }) => {
 
 	await vetsMenuItem.click()
 	await allVetsDropdownItem.click()
-	await expect(testVetRow.locator('td').nth(1)).toHaveText('')
+	await expect(testVetRow.locator('td').nth(1)).toBeEmpty()
 })
