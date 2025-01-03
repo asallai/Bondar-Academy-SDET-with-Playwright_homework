@@ -27,11 +27,12 @@ test.describe('Web Tables - Owners', async () => {
 		for (let lastName of lastNames) {
 			await page.getByRole('textbox').fill(lastName)
 			await page.getByRole('button', { name: 'Find Owner' }).click()
+			await page.waitForResponse(`https://petclinic-api.bondaracademy.com/petclinic/api/owners?lastName=${lastName}`)
 
 			if (lastName == 'Playwright') {
 				await expect(page.locator('app-owner-list .container div').last()).toHaveText('No owners with LastName starting with "Playwright"')
 			} else {
-				for (let nameField of await page.getByRole('row').locator('td').first().all()) {
+				for (let nameField of await page.locator('.ownerFullName').all()) {
 					await expect(nameField).toContainText(lastName)
 				}
 			}
@@ -42,11 +43,11 @@ test.describe('Web Tables - Owners', async () => {
 		const ownerPhoneNumber = '6085552765'
 
 		const ownerRow = page.getByRole('row', { name: ownerPhoneNumber })
-		const petNameField = await ownerRow.locator('td').last().textContent()
+		const ownerPetName = await ownerRow.locator('td').last().textContent()
 
 		await ownerRow.getByRole('link').click()
 		await expect(page.locator('tr', { hasText: 'Telephone' }).locator('td')).toHaveText(ownerPhoneNumber)
-		await expect(page.locator('tr', { hasText: 'Name' }).locator('dd').first()).toHaveText(petNameField!)
+		await expect(page.locator('tr', { hasText: 'Name' }).locator('dd').first()).toHaveText(ownerPetName!)
 	})
 
 	test('Validate pets of the Madison city', async ({ page }) => {
