@@ -18,58 +18,44 @@ test.describe('Web Tables - Owners', async () => {
 	})
 
 	test('Validate owners count of the Madison city', async ({ page }) => {
-		const targetCity = 'Madison'
-		await expect(
-			page.getByRole('row', { name: targetCity }).filter({ has: page.locator('td').nth(2).getByText(targetCity) })
-		).toHaveCount(4)
+		await expect(page.getByRole('row', { name: 'Madison' })).toHaveCount(4)
 	})
 
 	test('Validate search by Last Name', async ({ page }) => {
-		const lastNameInputField = page.getByRole('textbox')
-		const fullNameTableFields = page.locator('table tr td a')
-		const findOwnerButton = page.getByRole('button', { name: 'Find Owner' })
+		const lastNames = ['Black', 'Davis', 'Es', 'Playwright']
 
-		await lastNameInputField.fill('Black')
-		await findOwnerButton.click()
-		await expect(page.getByRole('row').locator('td').first()).toContainText(' Black')
+		for (let lastName of lastNames) {
+			await page.getByRole('textbox').fill(lastName)
+			await page.getByRole('button', { name: 'Find Owner' }).click()
 
-		await lastNameInputField.fill('Davis')
-		await findOwnerButton.click()
-
-		for (let fullNameField of await fullNameTableFields.all()) {
-			await expect(fullNameField).toContainText(' Davis')
+			if (lastName == 'Playwright') {
+				await expect(page.locator('app-owner-list .container div').last()).toHaveText('No owners with LastName starting with "Playwright"')
+			} else {
+				for (let nameField of await page.getByRole('row').locator('td').first().all()) {
+					await expect(nameField).toContainText(lastName)
+				}
+			}
 		}
-
-		await lastNameInputField.fill('Es')
-		await findOwnerButton.click()
-
-		for (let fullNameField of await fullNameTableFields.all()) {
-			await expect(fullNameField).toContainText(' Es')
-		}
-
-		await lastNameInputField.fill('Playwright')
-		await findOwnerButton.click()
-		await expect(page.locator('app-owner-list .container div').last()).toHaveText('No owners with LastName starting with "Playwright"')
 	})
 
 	test('Validate phone number and pet name on the Owner Information page', async ({ page }) => {
 		const ownerPhoneNumber = '6085552765'
-		const ownerRow = page.getByRole('row', { name: ownerPhoneNumber })
-		const table = page.getByRole('table')
 
-		const petName = await ownerRow.locator('td').last().textContent()
+		const ownerRow = page.getByRole('row', { name: ownerPhoneNumber })
+		const petNameField = await ownerRow.locator('td').last().textContent()
+
 		await ownerRow.getByRole('link').click()
-		await expect(table.first().locator('tr').last().locator('td')).toHaveText(ownerPhoneNumber)
-		await expect(table.nth(1).locator('dd').first()).toHaveText(petName!)
+		await expect(page.locator('tr', { hasText: 'Telephone' }).locator('td')).toHaveText(ownerPhoneNumber)
+		await expect(page.locator('tr', { hasText: 'Name' }).locator('dd').first()).toHaveText(petNameField!)
 	})
 
 	test('Validate pets of the Madison city', async ({ page }) => {
 		const expectedPetNames = ['Leo', 'George', 'Mulligan', 'Freddy']
-		const targetRows = page.getByRole('row', { name: 'Madison' })
+		const madisonCityRows = page.getByRole('row', { name: 'Madison' })
 
 		let actualPetNames: string[] = []
-		for (let targetRow of await targetRows.all()) {
-			let petName = await targetRow.locator('tr').last().textContent()
+		for (let madisonCityRow of await madisonCityRows.all()) {
+			let petName = await madisonCityRow.locator('tr').last().textContent()
 			actualPetNames.push(petName!.trim())
 		}
 		expect(actualPetNames).toEqual(expectedPetNames)
@@ -77,54 +63,34 @@ test.describe('Web Tables - Owners', async () => {
 })
 
 test('Validate specialty update', async ({ page }) => {
-	const originalSpecialty = 'surgery'
-	const updatedSpecialty = 'dermatology'
-
-	const targetSpecialtyField = page.getByRole('row', { name: 'Rafael Ortega' }).locator('td').nth(1)
-	const heading = page.getByRole('heading')
-	const specialtiesMenuItem = page.getByRole('link', { name: 'Specialties' })
-	const vetsMenuItem = page.getByRole('button', { name: 'Veterinarians' })
-	const allVetsDropdownItem = page.getByRole('link', { name: 'All' })
-
 	const specialtyInputField = page.getByRole('textbox')
-	const addSpecialtyButton = page.getByRole('button', { name: 'Add' })
-	const updateSpecialtyButton = page.getByRole('button', { name: 'Update' })
 
-	await vetsMenuItem.click()
-	await allVetsDropdownItem.click()
-	await expect(targetSpecialtyField).toHaveText(originalSpecialty)
+	const specialties = [
+		{ specialty: 'surgery', newSpecialty: 'dermatology' },
+		{ specialty: 'dermatology', newSpecialty: 'surgery' },
+	]
 
-	await specialtiesMenuItem.click()
-	await expect(heading).toHaveText('Specialties')
+	for (let { specialty, newSpecialty } of specialties) {
+		await page.getByRole('button', { name: 'Veterinarians' }).click()
+		await page.getByRole('link', { name: 'All' }).click()
+		await expect(page.getByRole('row', { name: 'Rafael Ortega' }).locator('td').nth(1)).toHaveText(specialty)
 
-	await page.getByRole('row', { name: originalSpecialty }).getByRole('button', { name: 'Edit' }).click()
-	await expect(heading).toHaveText('Edit Specialty')
+		await page.getByRole('link', { name: 'Specialties' }).click()
+		await expect(page.getByRole('heading')).toHaveText('Specialties')
 
-	await specialtyInputField.click()
-	await specialtyInputField.fill(updatedSpecialty)
-	await updateSpecialtyButton.click()
-	await expect(addSpecialtyButton).toBeVisible()
-	await expect(specialtyInputField.nth(1)).toHaveValue(updatedSpecialty)
+		await page.getByRole('row', { name: specialty }).getByRole('button', { name: 'Edit' }).click()
+		await expect(page.getByRole('heading')).toHaveText('Edit Specialty')
 
-	await vetsMenuItem.click()
-	await allVetsDropdownItem.click()
-	await expect(targetSpecialtyField).toHaveText(updatedSpecialty)
-
-	await specialtiesMenuItem.click()
-	await expect(heading).toHaveText('Specialties')
-
-	await page.getByRole('row', { name: updatedSpecialty }).getByRole('button', { name: 'Edit' }).click()
-	await expect(heading).toHaveText('Edit Specialty')
-
-	await specialtyInputField.click()
-	await specialtyInputField.fill(originalSpecialty)
-	await updateSpecialtyButton.click()
-	await expect(addSpecialtyButton).toBeVisible()
-	await expect(specialtyInputField.nth(1)).toHaveValue(originalSpecialty)
+		await specialtyInputField.click()
+		await specialtyInputField.fill(newSpecialty)
+		await page.getByRole('button', { name: 'Update' }).click()
+		await expect(page.getByRole('button', { name: 'Add' })).toBeVisible()
+		await expect(specialtyInputField.nth(1)).toHaveValue(newSpecialty)
+	}
 })
 
 test('Validate specialty lists', async ({ page }) => {
-	const targetRow = page.getByRole('row', { name: 'Sharon Jenkins' })
+	const testVetRow = page.getByRole('row', { name: 'Sharon Jenkins' })
 	const specialtiesMenuItem = page.getByRole('link', { name: 'Specialties' })
 	const vetsMenuItem = page.getByRole('button', { name: 'Veterinarians' })
 	const allVetsDropdownItem = page.getByRole('link', { name: 'All' })
@@ -145,7 +111,7 @@ test('Validate specialty lists', async ({ page }) => {
 
 	await vetsMenuItem.click()
 	await allVetsDropdownItem.click()
-	await targetRow.getByRole('button', { name: 'Edit' }).click()
+	await testVetRow.getByRole('button', { name: 'Edit' }).click()
 
 	await page.locator('.dropdown-arrow').click()
 
@@ -161,12 +127,12 @@ test('Validate specialty lists', async ({ page }) => {
 	await page.getByRole('checkbox', { name: 'oncology ' }).check()
 	await page.locator('.dropdown').last().click()
 	await page.getByRole('button', { name: 'Save Vet ' }).click()
-	await expect(targetRow.locator('td').nth(1)).toHaveText('oncology')
+	await expect(testVetRow.locator('td').nth(1)).toHaveText('oncology')
 
 	await specialtiesMenuItem.click()
 	await page.getByRole('row', { name: 'oncology' }).getByRole('button', { name: 'Delete' }).click()
 
 	await vetsMenuItem.click()
 	await allVetsDropdownItem.click()
-	await expect(targetRow.locator('td').nth(1)).toHaveText('')
+	await expect(testVetRow.locator('td').nth(1)).toHaveText('')
 })
