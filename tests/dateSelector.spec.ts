@@ -17,7 +17,7 @@ test.describe('Date picker', async () => {
 		const nameSection = page.locator('.form-group', { hasText: 'Name' })
 		const glyphIcon = nameSection.locator('span')
 		const petTypeDropdown = page.getByLabel('Type')
-		const tomPetSection = page.locator('app-pet-list', { hasText: petName })
+		const petSection = page.locator('app-pet-list', { hasText: petName })
 
 		await page.getByRole('link', { name: 'Harold Davis' }).click()
 		await page.getByRole('button', { name: 'Add New Pet' }).click()
@@ -26,72 +26,87 @@ test.describe('Date picker', async () => {
 		await nameSection.getByRole('textbox').fill('Tom')
 		await expect(glyphIcon).toHaveClass(/glyphicon-ok/)
 
-		await selectPreviousDateFromCalendar(petBirthYear, petBirthMonth, petBirthDay, page)
+		await selectPastDateFromCalendar(petBirthYear, petBirthMonth, petBirthDay, page)
 
 		await petTypeDropdown.click()
 		await petTypeDropdown.selectOption(petType)
 		await page.getByText('Save Pet').click()
-		await expect(tomPetSection.locator('dd').first()).toHaveText(petName)
-		await expect(tomPetSection.locator('dd').nth(1)).toHaveText(`${petBirthYear}-${petBirthMonth}-0${petBirthDay}`)
-		await expect(tomPetSection.locator('dd').nth(2)).toHaveText(petType)
+		await expect(petSection.locator('dd').first()).toHaveText(petName)
+		await expect(petSection.locator('dd').nth(1)).toHaveText(`${petBirthYear}-${petBirthMonth}-0${petBirthDay}`)
+		await expect(petSection.locator('dd').nth(2)).toHaveText(petType)
 
-		await tomPetSection.getByText('Delete Pet').click()
-		await expect(tomPetSection).not.toBeVisible()
+		await petSection.getByText('Delete Pet').click()
+		await expect(petSection).not.toBeVisible()
 	})
 
 	test('Select the dates of visits and validate dates order', async ({ page }) => {
 		const ownerName = 'Jean Coleman'
 		const petName = 'Samantha'
-		const visitText = 'dermatologists visit'
+		const todaysVisitText = 'dermatologists visit'
+		const formerVisitText = 'massage therapy'
 
-		const samanthaPetAddVisitButton = page.locator('app-pet-list', { hasText: petName }).getByText('Add Visit')
-		const samanthaPetNewVisitSection = page.locator('app-visit-add', { hasText: petName })
-		const samanthaPetVisitListSection = page.locator('app-pet-list', { hasText: petName }).locator('app-visit-list')
+		const visitDescriptionInputField = page.locator('#description')
+		const addVisitButton = page.getByRole('button', { name: 'Add Visit' })
 		const calendarTodayField = page.locator('.mat-calendar-body-today')
+		const petAddVisitButton = page.locator('app-pet-list', { hasText: petName }).getByText('Add Visit')
+		const petNewVisitSection = page.locator('app-visit-add', { hasText: petName })
+		const petVisitListSection = page.locator('app-pet-list', { hasText: petName }).locator('app-visit-list')
+		const petTodaysVisitRow = petVisitListSection.getByRole('row').nth(1)
+		const petFormerVisitRow = petVisitListSection.getByRole('row').nth(2)
 
 		await page.getByRole('link', { name: ownerName }).click()
-		await samanthaPetAddVisitButton.click()
+		await petAddVisitButton.click()
 		await expect(page.getByRole('heading')).toHaveText('New Visit')
-		await expect(samanthaPetNewVisitSection.locator('td').first()).toHaveText(petName)
-		await expect(samanthaPetNewVisitSection.locator('td').nth(3)).toHaveText(ownerName)
+		await expect(petNewVisitSection.locator('td').first()).toHaveText(petName)
+		await expect(petNewVisitSection.locator('td').nth(3)).toHaveText(ownerName)
 
 		await page.getByLabel('Open calendar').click()
 		const monthAndYear = await page.getByLabel('Choose month and year').textContent()
-		let visitDay1 = (await calendarTodayField.textContent())?.trim()
+		let todaysVisitDay = (await calendarTodayField.textContent())?.trim()
 		await calendarTodayField.click()
 
-		const visitYear1 = getYear(monthAndYear)
-		const visitMonth1 = getMonth(monthAndYear)
-		visitDay1 = String(visitDay1).padStart(2, '0')
-		await expect(page.locator('[name="date"]')).toHaveValue(`${visitYear1}/${visitMonth1}/${visitDay1}`)
+		const todaysVisitYear = getYear(monthAndYear)
+		const todaysVisitMonth = getMonth(monthAndYear)
+		todaysVisitDay = String(todaysVisitDay).padStart(2, '0')
+		await expect(page.locator('[name="date"]')).toHaveValue(`${todaysVisitYear}/${todaysVisitMonth}/${todaysVisitDay}`)
 
-		await page.locator('#description').fill('dermatologists visit')
-		await page.getByRole('button', { name: 'Add Visit' }).click()
+		await visitDescriptionInputField.fill(todaysVisitText)
+		await addVisitButton.click()
 		await expect(page.getByRole('heading').first()).toHaveText('Owner Information')
-		await expect(samanthaPetVisitListSection.getByRole('row').nth(1).locator('td').first()).toHaveText(`${visitYear1}-${visitMonth1}-${visitDay1}`)
-		await expect(samanthaPetVisitListSection.getByRole('row').nth(1).locator('td').nth(1)).toHaveText(visitText)
+		await expect(petTodaysVisitRow.locator('td').first()).toHaveText(`${todaysVisitYear}-${todaysVisitMonth}-${todaysVisitDay}`)
+		await expect(petTodaysVisitRow.locator('td').nth(1)).toHaveText(todaysVisitText)
 
-		await samanthaPetAddVisitButton.click()
-		
+		await petAddVisitButton.click()
+
 		let date = new Date()
 		date.setDate(date.getDate() - 45)
-		const visitDay2 = date.getDate().toString().padStart(2, '0')
-		const visitMonth2 = date.toLocaleString('EN-US', { month: '2-digit' })
-		const visitYear2 = date.getFullYear().toString()
+		const formerVisitDay = date.getDate().toString().padStart(2, '0')
+		const formerVisitMonth = date.toLocaleString('EN-US', { month: '2-digit' })
+		const formerVisitYear = date.getFullYear().toString()
 
-		await selectPreviousDateFromCalendar(visitYear2, visitMonth2, visitDay2, page)
+		await selectPastDateFromCalendar(formerVisitYear, formerVisitMonth, formerVisitDay, page)
 
-		// 12. Type the description in the field, for example, "massage therapy" and click "Add Visit" button
-		// 13. Add the assertion, that date added at step 11 is in chronological order in relation to the previous dates for "Samantha" pet on the "Owner Information" page. The date of visit above this date in the table should be greater.
-		// Hint: To add the assertion for step 13, Extract both values that you going to compare from the table and assign them to the constants.
-		// Convert those "string" type values into the "date" type values and save those new values in the constants. Add assertion with a condition, comparing two dates (constants),
-		// that it should be either "truthy" or "falsy"
-		// 14. Select the "Delete Visit" button for both newly created visits
-		// 15. Add the assertion that deleted visits are no longer displayed in the table on "Owner Information" page
+		await visitDescriptionInputField.fill(formerVisitText)
+		await addVisitButton.click()
+
+		const todaysVisitDate = `${todaysVisitYear}-${todaysVisitMonth}-${todaysVisitDay}`
+		const formerVisitDate = `${formerVisitYear}-${formerVisitMonth}-${formerVisitDay}`
+
+		await expect(petTodaysVisitRow.locator('td').first()).toHaveText(`${todaysVisitDate}`)
+		await expect(petFormerVisitRow.locator('td').first()).toHaveText(`${formerVisitDate}`)
+
+		await petTodaysVisitRow.getByRole('button', { name: 'Delete Visit' }).click()
+		await petFormerVisitRow.getByRole('button', { name: 'Delete Visit' }).click()
+
+		await expect(petTodaysVisitRow.locator('td').nth(1)).not.toHaveText(todaysVisitText)
+		await expect(petFormerVisitRow.locator('td').nth(1)).not.toHaveText(formerVisitText)
 	})
 })
 
-async function selectPreviousDateFromCalendar(year: string, month: string, day: string, page: any) {
+/**
+ * Date selection from the calendar can only handle dates from the past.
+ */
+async function selectPastDateFromCalendar(year: string, month: string, day: string, page: any) {
 	const calendarChooseYearField = page.getByLabel('Choose date')
 	const calendarMonthAndYearField = page.getByLabel('Choose month and year')
 	const calendarDayField = page.locator('[class="mat-calendar-body-cell-content mat-focus-indicator"]')
