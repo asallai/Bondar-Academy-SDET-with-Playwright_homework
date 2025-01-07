@@ -26,7 +26,7 @@ test.describe('Date picker', async () => {
 		await nameSection.getByRole('textbox').fill('Tom')
 		await expect(glyphIcon).toHaveClass(/glyphicon-ok/)
 
-		await selectPastDateFromCalendar(petBirthYear, petBirthMonth, petBirthDay, page)
+		await selectFormerDateFromCalendar(petBirthYear, petBirthMonth, petBirthDay, page)
 
 		await petTypeDropdown.click()
 		await petTypeDropdown.selectOption(petType)
@@ -43,7 +43,7 @@ test.describe('Date picker', async () => {
 		const ownerName = 'Jean Coleman'
 		const petName = 'Samantha'
 		const todaysVisitText = 'dermatologists visit'
-		const formerVisitText = 'massage therapy'
+		const pastVisitText = 'massage therapy'
 
 		const visitDescriptionInputField = page.locator('#description')
 		const addVisitButton = page.getByRole('button', { name: 'Add Visit' })
@@ -52,7 +52,7 @@ test.describe('Date picker', async () => {
 		const petNewVisitSection = page.locator('app-visit-add', { hasText: petName })
 		const petVisitListSection = page.locator('app-pet-list', { hasText: petName }).locator('app-visit-list')
 		const petTodaysVisitRow = petVisitListSection.getByRole('row').nth(1)
-		const petFormerVisitRow = petVisitListSection.getByRole('row').nth(2)
+		const petPastVisitRow = petVisitListSection.getByRole('row').nth(2)
 
 		await page.getByRole('link', { name: ownerName }).click()
 		await petAddVisitButton.click()
@@ -80,33 +80,33 @@ test.describe('Date picker', async () => {
 
 		let date = new Date()
 		date.setDate(date.getDate() - 45)
-		const formerVisitDay = date.getDate().toString().padStart(2, '0')
-		const formerVisitMonth = date.toLocaleString('EN-US', { month: '2-digit' })
-		const formerVisitYear = date.getFullYear().toString()
+		const pastVisitDay = date.getDate().toString().padStart(2, '0')
+		const pastVisitMonth = date.toLocaleString('EN-US', { month: '2-digit' })
+		const pastVisitYear = date.getFullYear().toString()
 
-		await selectPastDateFromCalendar(formerVisitYear, formerVisitMonth, formerVisitDay, page)
+		await selectFormerDateFromCalendar(pastVisitYear, pastVisitMonth, pastVisitDay, page)
 
-		await visitDescriptionInputField.fill(formerVisitText)
+		await visitDescriptionInputField.fill(pastVisitText)
 		await addVisitButton.click()
 
 		const todaysVisitDate = `${todaysVisitYear}-${todaysVisitMonth}-${todaysVisitDay}`
-		const formerVisitDate = `${formerVisitYear}-${formerVisitMonth}-${formerVisitDay}`
+		const pastVisitDate = `${pastVisitYear}-${pastVisitMonth}-${pastVisitDay}`
 
 		await expect(petTodaysVisitRow.locator('td').first()).toHaveText(`${todaysVisitDate}`)
-		await expect(petFormerVisitRow.locator('td').first()).toHaveText(`${formerVisitDate}`)
+		await expect(petPastVisitRow.locator('td').first()).toHaveText(`${pastVisitDate}`)
 
 		await petTodaysVisitRow.getByRole('button', { name: 'Delete Visit' }).click()
-		await petFormerVisitRow.getByRole('button', { name: 'Delete Visit' }).click()
+		await petPastVisitRow.getByRole('button', { name: 'Delete Visit' }).click()
 
 		await expect(petTodaysVisitRow.locator('td').nth(1)).not.toHaveText(todaysVisitText)
-		await expect(petFormerVisitRow.locator('td').nth(1)).not.toHaveText(formerVisitText)
+		await expect(petPastVisitRow.locator('td').nth(1)).not.toHaveText(pastVisitText)
 	})
 })
 
 /**
  * Date selection from the calendar can only handle dates from the past.
  */
-async function selectPastDateFromCalendar(year: string, month: string, day: string, page: any) {
+async function selectFormerDateFromCalendar(year: string, month: string, day: string, page: any) {
 	const calendarChooseYearField = page.getByLabel('Choose date')
 	const calendarMonthAndYearField = page.getByLabel('Choose month and year')
 	const calendarDayField = page.locator('[class="mat-calendar-body-cell-content mat-focus-indicator"]')
