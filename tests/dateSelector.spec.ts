@@ -30,12 +30,12 @@ test.describe('Date picker', async () => {
 
 		await petTypeDropdown.click()
 		await petTypeDropdown.selectOption(petType)
-		await page.getByText('Save Pet').click()
+		await page.getByRole('button', { name: 'Save Pet' }).click()
 		await expect(petSection.locator('dd').first()).toHaveText(petName)
 		await expect(petSection.locator('dd').nth(1)).toHaveText(`${petBirthYear}-${petBirthMonth}-0${petBirthDay}`)
 		await expect(petSection.locator('dd').nth(2)).toHaveText(petType)
 
-		await petSection.getByText('Delete Pet').click()
+		await petSection.getByRole('button', { name: 'Delete Pet' }).click()
 		await expect(petSection).not.toBeVisible()
 	})
 
@@ -62,12 +62,11 @@ test.describe('Date picker', async () => {
 
 		await page.getByLabel('Open calendar').click()
 		const monthAndYear = await page.getByLabel('Choose month and year').textContent()
-		let todaysVisitDay = (await calendarTodayField.textContent())?.trim()
+		let todaysVisitDay = (await calendarTodayField.textContent())?.trim().padStart(2, '0')
 		await calendarTodayField.click()
 
-		const todaysVisitYear = getYear(monthAndYear)
-		const todaysVisitMonth = getMonth(monthAndYear)
-		todaysVisitDay = String(todaysVisitDay).padStart(2, '0')
+		const [todaysVisitMonth, todaysVisitYear] = monthAndYear?.split(' ') ?? [];
+
 		await expect(page.locator('[name="date"]')).toHaveValue(`${todaysVisitYear}/${todaysVisitMonth}/${todaysVisitDay}`)
 
 		await visitDescriptionInputField.fill(todaysVisitText)
@@ -89,11 +88,8 @@ test.describe('Date picker', async () => {
 		await visitDescriptionInputField.fill(pastVisitText)
 		await addVisitButton.click()
 
-		const todaysVisitDate = `${todaysVisitYear}-${todaysVisitMonth}-${todaysVisitDay}`
-		const pastVisitDate = `${pastVisitYear}-${pastVisitMonth}-${pastVisitDay}`
-
-		await expect(petTodaysVisitRow.locator('td').first()).toHaveText(`${todaysVisitDate}`)
-		await expect(petPastVisitRow.locator('td').first()).toHaveText(`${pastVisitDate}`)
+		await expect(petTodaysVisitRow.locator('td').first()).toHaveText(`${todaysVisitYear}-${todaysVisitMonth}-${todaysVisitDay}`)
+		await expect(petPastVisitRow.locator('td').first()).toHaveText( `${pastVisitYear}-${pastVisitMonth}-${pastVisitDay}`)
 
 		await petTodaysVisitRow.getByRole('button', { name: 'Delete Visit' }).click()
 		await petPastVisitRow.getByRole('button', { name: 'Delete Visit' }).click()
@@ -103,30 +99,10 @@ test.describe('Date picker', async () => {
 	})
 })
 
-/**
- * Date selection from the calendar can only handle dates from the past.
- */
 async function selectFormerDateFromCalendar(year: string, month: string, day: string, page: any) {
-	const calendarChooseYearField = page.getByLabel('Choose date')
 	const calendarMonthAndYearField = page.getByLabel('Choose month and year')
-	const calendarDayField = page.locator('[class="mat-calendar-body-cell-content mat-focus-indicator"]')
-
+	
 	await page.getByLabel('Open calendar').click()
-	await calendarMonthAndYearField.click()
-
-	let yearPeriod = await calendarChooseYearField.textContent()
-	let fromYear = getFromYear(yearPeriod)
-	let toYear = getToYear(yearPeriod)
-
-	while (!(year >= fromYear && year <= toYear)) {
-		await page.getByLabel('Previous 24 years').click()
-		yearPeriod = await calendarChooseYearField.textContent()
-		fromYear = getFromYear(yearPeriod)
-		toYear = getToYear(yearPeriod)
-	}
-
-	await page.getByLabel(year).click()
-	await page.getByLabel(`${month} ${year}`).click()
 
 	let calendarMonthAndYear = await calendarMonthAndYearField.textContent()
 
@@ -135,26 +111,6 @@ async function selectFormerDateFromCalendar(year: string, month: string, day: st
 		calendarMonthAndYear = await calendarMonthAndYearField.textContent()
 	}
 
-	await calendarDayField.getByText(day, { exact: true }).click()
+	await page.locator('[class="mat-calendar-body-cell-content mat-focus-indicator"]').getByText(day, { exact: true }).click()
 	await expect(page.locator('.mat-datepicker-input')).toHaveValue(`${year}/${month}/${String(day).padStart(2, '0')}`)
-}
-
-function getFromYear(yearPeriod: string | null) {
-	let years = yearPeriod!.split(' – ')
-	return years[0]
-}
-
-function getToYear(yearPeriod: string | null) {
-	let years = yearPeriod!.split(' – ')
-	return years[1]
-}
-
-function getMonth(monthAndYear: string | null) {
-	let month = monthAndYear!.split(' ')
-	return month[0]
-}
-
-function getYear(monthAndYear: string | null) {
-	let year = monthAndYear!.split(' ')
-	return year[1]
 }
